@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Просмотр файлов</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>Введите путь</h2>
+    <form name="fileForm">
+      <div class="form-group">
+          <label for="path_to_file">Скачать файл:</label>
+          <input class="form-control" name="path_to_file" />
+          <button type="submit" class="btn btn-sm btn-primary">Скачать</button>
+      </div>
+    </form>
+
+    <form name="dirForm">
+        <div class="form-group">
+            <label for="path_to_dir">Просмотр папки:</label>
+            <input class="form-control" name="path_to_dir" />
+            <button type="submit" class="btn btn-sm btn-primary">Показать</button>
+        </div>
+    </form>
+
+    <table id="t" class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>Содержимое папки</th></tr></thead>
+        <tbody>
+          <tr><th></th></tr>
+        </tbody>
+    </table>
+   
+    <script>
+        async function get_dir_data(entered_path) {
+  
+            const response = await fetch("api/dirpath", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({path: entered_path})
+            });
+            if (response.ok) {
+                const data = await response.json();
+                console.log("data  ", data);
+                table = document.getElementById("t");
+                table.rows[1].cells[0].innerHTML = data;
+            }
+        }
+
+        async function get_file(entered_path) {
+          const response = await fetch("api/download", {
+              method: "POST",
+              headers: { "Accept": "application/json", "Content-Type": "application/json" },
+              body: JSON.stringify({path: entered_path})
+          });
+          if (response.ok) {
+              const blob = await response.blob();
+              const download_url = window.URL.createObjectURL(blob);
+              const link = document.createElement(tagName='a');
+              link.href = download_url;
+              link.download = entered_path.split('/').slice(-1);
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+          }
+          else
+          {
+              console.log("There are some problems");
+          }
+        }
+
+        // отправка формы
+        document.forms["dirForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["dirForm"];
+            const path = form.elements["path_to_dir"].value;
+            if (path)
+            {
+                get_dir_data(path);
+            }
+        });
+
+        // отправка формы
+        document.forms["fileForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["fileForm"];
+            const path = form.elements["path_to_file"].value;
+            if (path)
+            {
+                get_file(path);
+            }
+        });
+
+    </script>
+</body>
+</html>
